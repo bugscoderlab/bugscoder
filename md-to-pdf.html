@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Markdown to PDF Converter</title>
+    <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2pdf.js/0.10.1/html2pdf.bundle.min.js"></script>
+        <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        mono: ['Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* Custom styles for markdown preview */
+        #preview h1, #preview h2, #preview h3, #preview h4, #preview h5, #preview h6 {
+            margin-top: 1em;
+            margin-bottom: 0.5em;
+            font-weight: bold;
+            color: white;
+        }
+        #preview h1 { font-size: 2em; }
+        #preview h2 { font-size: 1.5em; }
+        #preview h3 { font-size: 1.25em; }
+        #preview p { margin-bottom: 1em; color: #e2e8f0; }
+        #preview code {
+            font-family: theme('fontFamily.mono');
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 0.2em 0.4em;
+            color: #90cdf4;
+        }
+        #preview pre {
+            background-color: rgba(255, 255, 255, 0.1);
+            padding: 1em;
+            overflow-x: auto;
+            margin-bottom: 1em;
+        }
+        #preview blockquote {
+            border-left: 4px solid #4a5568;
+            padding-left: 1em;
+            color: #a0aec0;
+            margin-bottom: 1em;
+        }
+        #preview ul, #preview ol {
+            margin-bottom: 1em;
+            padding-left: 2em;
+            color: #e2e8f0;
+        }
+        #preview ul { list-style-type: disc; }
+        #preview ol { list-style-type: decimal; }
+        #preview table {
+            border-collapse: collapse;
+            width: 100%;
+            margin-bottom: 1em;
+        }
+        #preview th, #preview td {
+            border: 1px solid #4a5568;
+            padding: 0.5em;
+        }
+        #preview th {
+            background-color: rgba(255, 255, 255, 0.1);
+        }
+        /* Custom placeholder styling */
+        #markdown-input::placeholder {
+            color: #a0aec0;
+            opacity: 1;
+        }
+        
+        /* Print styles for PDF */
+        @media print {
+            body * {
+                visibility: hidden;
+            }
+            #preview, #preview * {
+                visibility: visible;
+            }
+            #preview {
+                position: absolute;
+                left: 0;
+                top: 0;
+                width: 100%;
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body class="bg-gray-900 min-h-screen">
+    <div class="container mx-auto flex flex-col h-screen p-4 max-w-7xl">
+        <header class="text-center mb-6">
+            <h1 class="text-3xl font-bold text-white mb-2">Markdown to PDF Converter</h1>
+        </header>
+        <div class="flex flex-1 gap-6 mb-6">
+            <div class="flex-1 flex flex-col bg-gray-800 border border-gray-700">
+                <div class="p-4 bg-gray-900 text-white font-bold flex items-center">Markdown</div>
+                <textarea id="markdown-input" class="flex-1 p-4 font-mono text-sm leading-relaxed resize-none bg-gray-700 text-white border border-gray-600 focus:border-blue-500 focus:ring-2 focus:ring-blue-500 focus:ring-opacity-50" placeholder="Type your markdown here..." spellcheck="false">## Welcome to Markdown to PDF Converter
+
+This is a simple tool to convert your **Markdown** to *PDF*.
+
+### Features
+- Real-time preview
+- Download as PDF
+- Simple and easy to use
+
+```javascript
+const greeting = "Hello, world!";
+console.log(greeting);
+```
+
+> This is a blockquote
+
+| Header 1 | Header 2 |
+| -------- | -------- |
+| Cell 1   | Cell 2   |
+| Cell 3   | Cell 4   |
+</textarea>
+            </div>
+            <div class="flex-1 flex flex-col bg-gray-800 border border-gray-700">
+                <div class="p-4 bg-gray-900 text-white font-bold flex justify-between items-center">
+                    <span>Preview</span>
+                    <button id="download-btn" class="py-1 px-3 bg-blue-700 hover:bg-blue-600 text-white text-sm font-medium transition duration-300 ease-in-out">Download as PDF</button>
+                </div>
+                <div id="preview" class="flex-1 p-4 overflow-y-auto bg-gray-800 text-white"></div>
+            </div>
+        </div>
+        <!-- Removed buttons container -->
+    </div>
+
+    <script>
+        // DOM elements
+        const markdownInput = document.getElementById('markdown-input');
+        const preview = document.getElementById('preview');
+        const downloadBtn = document.getElementById('download-btn');
+
+        // Initialize marked.js with options
+        marked.setOptions({
+            breaks: true,        // Add line breaks when newlines are present
+            gfm: true,           // Enable GitHub Flavored Markdown
+            headerIds: true,     // Generate IDs for headings
+            sanitize: false      // Allow HTML in the markdown
+        });
+
+        // Function to update preview
+        function updatePreview() {
+            const markdown = markdownInput.value;
+            const html = marked.parse(markdown);
+            preview.innerHTML = html;
+        }
+
+        // Function to download as PDF
+        function downloadPDF() {
+            // Configure html2pdf options
+            const options = {
+                margin: [15, 15, 15, 15],
+                filename: 'markdown-document.pdf',
+                image: { type: 'jpeg', quality: 0.98 },
+                html2canvas: { scale: 2, useCORS: true },
+                jsPDF: { unit: 'mm', format: 'a4', orientation: 'portrait' }
+            };
+
+            // Clone the preview div to avoid modifying the original
+            const element = preview.cloneNode(true);
+            element.style.padding = '20px';
+            element.style.backgroundColor = 'white';
+            element.style.color = 'black';
+            
+            // Ensure all elements in the PDF have proper colors for printing
+            const allElements = element.querySelectorAll('*');
+            allElements.forEach(el => {
+                el.style.color = 'black';
+                if (el.tagName === 'CODE' || el.tagName === 'PRE') {
+                    el.style.backgroundColor = 'rgba(0, 0, 0, 0.05)';
+                }
+                if (el.tagName === 'TH' || el.tagName === 'TD') {
+                    el.style.borderColor = '#ddd';
+                }
+                if (el.tagName === 'BLOCKQUOTE') {
+                    el.style.borderLeftColor = '#ddd';
+                }
+            });
+
+            // Generate PDF
+            html2pdf().set(options).from(element).save();
+        }
+
+        // Clear function removed
+
+        // No theme toggle functionality needed
+
+        // Event listeners
+        markdownInput.addEventListener('input', updatePreview);
+        downloadBtn.addEventListener('click', downloadPDF);
+
+        // Initialize preview
+        updatePreview();
+    </script>
+</body>
+</html>
